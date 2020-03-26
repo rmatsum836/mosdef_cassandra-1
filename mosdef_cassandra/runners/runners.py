@@ -212,36 +212,37 @@ def _run_cassandra(cassandra, inp_file, log_file):
 
 def _check_temperature(temperature):
     if not isinstance(temperature, u.unyt_array):
-        warnings.warn('Temperature assumed to be in K')
-        temperature *= u.K
+        raise ValueError('Temperature must be a unyt_array')
     else:
+        print('Converting to Kelvin')
         temperature.convert_to_units(u.K)
 
     return temperature
 
 def _check_pressure(pressure):
     if not isinstance(pressure, u.unyt_array):
-        warnings.warn('Pressure assumed to be in bar')
-        pressure *= u.bar
+        raise ValueError('Pressure must be a unyt_array')
     else:
+        print('Converting to Bar')
         pressure.convert_to_units(u.bar)
 
     return pressure
 
 def _check_distance(distance):
     if not isinstance(distance, u.unyt_array):
-        warnings.warn('Distance assumed to be in angstroms')
+        raise ValueError('Distance must be a unyt_array')
         distance *= u.angstrom
     else:
+        print('Converting to angstroms')
         distance.convert_to_units(u.angstrom)
 
     return distance
 
 def _check_mu(mu):
     if not isinstance(mu, u.unyt_array):
-        warnings.warn('Chemical potential assumed to be in kJ/mol')
-        mu *= u.kJ/u.mol
+        raise ValueError('Chemical potential must be a unyt_array')
     else:
+        print('Converting to kJ/mol')
         mu.convert_to_units(u.kJ/u.mol)
 
     return mu

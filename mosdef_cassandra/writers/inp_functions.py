@@ -188,7 +188,7 @@ def generate_input(system, moves, run_type, run_length, temperature, **kwargs):
     if "rcut_min" in kwargs:
         rcut_min = kwargs["rcut_min"]
     else:
-        rcut_min = 1.0 * u.ansgstrom
+        rcut_min = 1.0 * u.angstrom
     inp_data += get_minimum_cutoff(rcut_min)
 
     # Pair Energy
