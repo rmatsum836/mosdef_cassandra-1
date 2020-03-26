@@ -40,8 +40,8 @@ def run(system, moves, run_type, run_length, temperature, **kwargs):
         kwargs['pressure'] = _check_pressure(kwargs['pressure'])
 
     # Prune unyt units from values
-    kwargs = _prepare_units(kwargs)
-    temperature = float(temperature.value)
+    #kwargs = _prepare_units(kwargs)
+    #temperature = float(temperature.value)
 
     # Write MCF files
     write_mcfs(system)
@@ -209,21 +209,6 @@ def _run_cassandra(cassandra, inp_file, log_file):
 
     if p.returncode != 0 or "error" in err.lower():
         print("Cassandra error, see {}".format(log_file))
-
-def _prepare_units(kwargs):
-    for kwarg in kwargs:
-        if isinstance(kwargs[kwarg], (list, tuple)):
-            temp_list = list()
-            for x in kwargs[kwarg]:
-                if isinstance(x, u.unyt_array):
-                    x = float(x.value)
-                temp_list.append(x)
-                kwargs[kwarg] = temp_list
-        else:
-            if isinstance(kwargs[kwarg], u.unyt_array):
-                kwargs[kwarg] = float(kwargs[kwarg].value)
-
-    return kwargs
 
 def _check_temperature(temperature):
     if not isinstance(temperature, u.unyt_array):

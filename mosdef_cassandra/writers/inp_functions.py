@@ -1,6 +1,7 @@
 import mbuild
 import datetime
 import numpy as np
+import unyt as u
 
 import mosdef_cassandra.utils.convert_box as convert_box
 
@@ -86,14 +87,14 @@ def generate_input(system, moves, run_type, run_length, temperature, **kwargs):
     if "vdw_cutoff" in kwargs:
         vdw_cutoff = kwargs["vdw_cutoff"]
     else:
-        vdw_cutoff = 12.0
+        vdw_cutoff = 12.0 * u.angstrom
 
     if vdw_style == "none":
         cutoff_style = None
 
     vdw_styles = [vdw_style] * nbr_boxes
     cutoff_styles = [cutoff_style] * nbr_boxes
-    vdw_cutoffs = [vdw_cutoff] * nbr_boxes
+    vdw_cutoffs = [vdw_cutoff.value] * nbr_boxes
     # Support for per-box cutoffs
     if "vdw_cutoff_box1" in kwargs:
         vdw_cutoffs[0] = kwargs["vdw_cutoff_box1"]
@@ -118,7 +119,7 @@ def generate_input(system, moves, run_type, run_length, temperature, **kwargs):
     if "charge_cutoff" in kwargs:
         charge_cutoff = kwargs["charge_cutoff"]
     else:
-        charge_cutoff = 12.0
+        charge_cutoff = 12.0 * u.angstrom
 
     if "ewald_accuracy" in kwargs:
         ewald_accuracy = kwargs["ewald_accuracy"]
@@ -131,7 +132,7 @@ def generate_input(system, moves, run_type, run_length, temperature, **kwargs):
         dsf_damping = None
 
     charge_styles = [charge_style] * nbr_boxes
-    charge_cutoffs = [charge_cutoff] * nbr_boxes
+    charge_cutoffs = [charge_cutoff.value] * nbr_boxes
 
     # Support for per-box cutoffs
     if "charge_cutoff_box1" in kwargs:
@@ -187,7 +188,7 @@ def generate_input(system, moves, run_type, run_length, temperature, **kwargs):
     if "rcut_min" in kwargs:
         rcut_min = kwargs["rcut_min"]
     else:
-        rcut_min = 1.0
+        rcut_min = 1.0 * u.ansgstrom
     inp_data += get_minimum_cutoff(rcut_min)
 
     # Pair Energy
@@ -763,13 +764,13 @@ def get_seed_info(seed1=None, seed2=None):
 
 
 def get_minimum_cutoff(cutoff):
-    if not isinstance(cutoff, (float, int)):
+    if not isinstance(cutoff.value.item(), (float, int)):
         raise TypeError("rcut_min should be of type float")
 
     inp_data = """
 # Rcutoff_Low
 {cutoff}""".format(
-        cutoff=cutoff
+        cutoff=cutoff.value
     )
 
     inp_data += """
@@ -900,11 +901,11 @@ def get_temperature_info(temps):
         list of temperatures with one for each box
     """
     for temp in temps:
-        if not isinstance(temp, (float, int)):
+        if not isinstance(temp.value.item(), (float, int)):
             raise TypeError("Temperature must be of type float")
         if temp < 0.0:
             raise ValueError(
-                "Specified temperature ({}) is " "less than zero".format(temp)
+                "Specified temperature ({}) is " "less than zero".format(temp.value)
             )
 
     inp_data = """
@@ -913,7 +914,7 @@ def get_temperature_info(temps):
     for temp in temps:
         inp_data += """
 {temperature}""".format(
-            temperature=temp
+            temperature=temp.value
         )
 
     inp_data += """
@@ -933,7 +934,7 @@ def get_pressure_info(pressures):
     """
 
     for press in pressures:
-        if not isinstance(press, (float, int)):
+        if not isinstance(press.value.item(), (float, int)):
             raise TypeError("Pressure must be of type float")
 
     inp_data = """
@@ -942,7 +943,7 @@ def get_pressure_info(pressures):
     for press in pressures:
         inp_data += """
 {pressure}""".format(
-            pressure=press
+            pressure=press.value
         )
 
     inp_data += """
@@ -964,7 +965,7 @@ def get_chemical_potential_info(chem_pots):
 
     for chem_pot in chem_pots:
         if chem_pot != "none":
-            if not isinstance(chem_pot, (float, int)):
+            if not isinstance(chem_pot.value.item(), (float, int)):
                 raise TypeError(
                     'Chemical potentials must "none" or ' "be of type float"
                 )
@@ -974,6 +975,8 @@ def get_chemical_potential_info(chem_pots):
 """
 
     for chem_pot in chem_pots:
+        if isinstance(chem_pot, (u.unyt_array)):
+            chem_pot = chem_pot.value
         inp_data += """{chem_pot} """.format(chem_pot=chem_pot)
 
     inp_data += """
@@ -1710,7 +1713,7 @@ def _get_possible_kwargs(desc=False):
         "run_name": "str, name of output",
         "vdw_style": 'str, "lj" or "none"',
         "cutoff_style": 'str, "cut" or "cut_tail" or "cut_switch" or "cut_shift"',
-        "vdw_cutoff": 'float, except for "cut_switch", where [inner_cutoff, outer_cutoff].',
+        "vdw_cutoff": 'unyt_array or float, except for "cut_switch", where [inner_cutoff, outer_cutoff].',
         "vdw_cutoff_box1": 'customize vdw cutoff for box 1. see "vdw_cutoff" for format',
         "vdw_cutoff_box2": 'customize vdw cutoff for box 2. see "vdw_cutoff" for format',
         "charge_style": 'str, "none" or "cut" or "ewald" or "dsf"',
@@ -1725,10 +1728,10 @@ def _get_possible_kwargs(desc=False):
         "rcut_min": "float, automatically reject move if atoms are closer than this distance",
         "pair_energy": "boolean, store pair energies (faster but requires more memory)",
         "max_molecules": "list of ints, maximum number of molecules for each species",
-        "pressure": "float, desired pressure (npt and gemc-npt)",
+        "pressure": "unyt_array or float, desired pressure (npt and gemc-npt)",
         "pressure_box1": 'customize pressure for box 1. see "pressure" for format',
         "pressure_box2": 'customize pressure for box 2. see "pressure" for format',
-        "chemical_potentials": "list of floats, specify the desired chemical potential for each species",
+        "chemical_potentials": "list of unyt_arrays or floats, specify the desired chemical potential for each species",
         "thermal_stat_freq": "int, frequency of printing/updating non-volume moves",
         "vol_stat_freq": "int, frequency of printing/updating volume moves",
         "units": 'str, units for run/thermo/coord run_length/freqs. "minutes" or "steps" or "sweeps"',
