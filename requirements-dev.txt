@@ -1,5 +1,6 @@
 numpy
 parmed
+networkx
 foyer >= 0.7.3
 mbuild >= 0.10.5
 openbabel
@@ -8,3 +9,4 @@ sphinx
 sphinx_rtd_theme
 pytest
 unyt >= 2.4
+cassandra >= 1.2.2
